@@ -1,4 +1,4 @@
-package com.example.ryan.gpsdemo;
+package com.example.ryan.gpsdemo.activities;
 
 import android.Manifest;
 import android.content.Context;
@@ -14,6 +14,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.example.ryan.gpsdemo.R;
 
 public class GpsDemoActivity extends AppCompatActivity implements LocationListener {
 
