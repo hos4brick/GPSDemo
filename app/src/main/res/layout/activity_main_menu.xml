@@ -3,17 +3,23 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.example.ryan.gpsdemo.activities.MainMenuActivity"
-    android:background="@drawable/main_menu_background"
-    android:backgroundTint="#b7001f9d"
-    android:backgroundTintMode="multiply">
+    tools:context=".activities.menu.MainMenuActivity"
+    android:background="@drawable/main_menu_background">
 
-    <ExpandableListView
-        android:id="@+id/mainMenuExpandableList"
+    <RelativeLayout
+        android:background="@color/black"
+        android:alpha=".9"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"></ExpandableListView>
+        android:layout_height="match_parent"
+        android:paddingBottom="@dimen/activity_vertical_margin"
+        android:paddingLeft="@dimen/activity_horizontal_margin"
+        android:paddingRight="@dimen/activity_horizontal_margin"
+        android:paddingTop="@dimen/activity_vertical_margin" >
+
+
+        <ExpandableListView
+            android:id="@+id/mainMenuExpandableList"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"></ExpandableListView>
+    </RelativeLayout>
 </RelativeLayout>
