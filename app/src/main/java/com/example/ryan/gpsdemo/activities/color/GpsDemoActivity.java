@@ -1,9 +1,11 @@
-package com.example.ryan.gpsdemo.activities;
+package com.example.ryan.gpsdemo.activities.color;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -14,24 +16,36 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.ryan.gpsdemo.R;
 import com.example.ryan.gpsdemo.activities.menu.MainMenuActivity;
+import com.gps.demo.model.event.EventModel;
 
-public class GpsDemoActivity extends AppCompatActivity implements LocationListener, OnClickListener {
+import callback.ViewCallBackInterface;
+
+public class GpsDemoActivity extends AppCompatActivity implements LocationListener, OnClickListener,
+        ViewCallBackInterface{
     public static final int BUTTON_MENU_TAG = 0;
+    public static final String EVENT_MODEL_KEY = "EVENT_MODEL_KEY";
 
     private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 24601;
+
+    private BroadcastReceiver broadcastReceiver = null;
 
     LocationManager locationManager;
     boolean enabled;
     Location location;
     String provider;
+    double latitude = 0;
+    double longitude = 0;
     TextView latitudeField;
     TextView longitudeField;
+    ImageView colorBox;
+
+    EventModel eventModel = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +55,8 @@ public class GpsDemoActivity extends AppCompatActivity implements LocationListen
         latitudeField = (TextView) findViewById(R.id.gps_lat_text_view);
         longitudeField = (TextView) findViewById(R.id.gps_long_text_view);
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        colorBox = (ImageView) findViewById(R.id.color_box);
 
         Criteria criteria = new Criteria();
         provider = locationManager.getBestProvider(criteria, false);
@@ -66,15 +82,18 @@ public class GpsDemoActivity extends AppCompatActivity implements LocationListen
 
         if (location != null) {
             System.out.println("Provider " + provider + " has been selected.");
-            onLocationChanged(location);
-        } else {
-            latitudeField.setText("Location not available");
-            longitudeField.setText("Location not available");
         }
+        locationUpdate(location);
 
-        Button menuButton = (Button) findViewById(R.id.main_menu_button);
-        menuButton.setOnClickListener(this);
-        menuButton.setTag(BUTTON_MENU_TAG);
+        Intent intent = getIntent();
+
+        broadcastReceiver = new GpsDemoBroadcastReceiver(this);
+
+        if (intent.hasExtra(EVENT_MODEL_KEY)) {
+            String eventKey = intent.getStringExtra(EVENT_MODEL_KEY);
+            eventModel = MainMenuActivity.getApplicationModel().getEvent(eventKey);
+            eventModel.start(this);
+        }
     }
 
     @Override
@@ -93,8 +112,7 @@ public class GpsDemoActivity extends AppCompatActivity implements LocationListen
     public void onLocationChanged(Location location) {
         double lat = (double) (location.getLatitude());
         double lng = (double) (location.getLongitude());
-        latitudeField.setText(String.valueOf(lat));
-        longitudeField.setText(String.valueOf(lng));
+        locationUpdate(location);
     }
 
     @Override
@@ -158,5 +176,44 @@ public class GpsDemoActivity extends AppCompatActivity implements LocationListen
     private void handleMenuButtonClick() {
         Intent mainMenuIntent = new Intent(this, MainMenuActivity.class);
         startActivity(mainMenuIntent);
+    }
+
+    private void locationUpdate(Location location) {
+        this.location = location;
+        locationUpdate();
+    }
+    public void locationUpdate() {
+
+        if (location != null) {
+            latitude = location.getLatitude();
+            longitude = location.getLongitude();
+
+            latitudeField.setText(String.valueOf(latitude));
+            longitudeField.setText(String.valueOf(longitude));
+
+            if (null != eventModel) {
+                String hexColor = eventModel.getHexColor(latitude, longitude);
+                updateScreenColor(hexColor);
+            }
+
+        } else {
+            latitudeField.setText("Location not available");
+            longitudeField.setText("Location not available");
+        }
+    }
+
+    private void updateScreenColor(String hexColor) {
+        int androidColorCode = Color.parseColor("#" + hexColor);
+        colorBox.setBackgroundColor(androidColorCode);
+    }
+
+
+
+
+    @Override
+    public void update(CallBackCommand command) {
+        Intent intent = new Intent();
+        intent.setAction(command.name());
+        this.sendBroadcast(intent);
     }
 }

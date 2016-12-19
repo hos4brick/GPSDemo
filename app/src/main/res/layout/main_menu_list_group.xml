@@ -5,10 +5,9 @@
     android:layout_height="match_parent">
 
     <TextView
-        android:id="@+id/mainMenuListGroupTextView"
+        android:id="@+id/main_menu_list_group_text_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
-        android:textColor="@color/black"/>
+        style="@style/menu_group_heading" />
 
 </LinearLayout>

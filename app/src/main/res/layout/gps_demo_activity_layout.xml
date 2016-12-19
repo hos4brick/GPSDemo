@@ -9,19 +9,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/colorPrimary"
-        android:layout_weight=".8"/>
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Menu"
-        android:id="@+id/main_menu_button" />
+        android:layout_weight=".9"/>
 
     <TextView
         android:id="@+id/gps_lat_text_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight=".1"
+        android:layout_weight=".5"
         android:text="LAT: "/>
 
 
@@ -29,6 +23,6 @@
         android:id="@+id/gps_long_text_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight=".1"
+        android:layout_weight=".5"
         android:text="LONG: " />
 </LinearLayout>

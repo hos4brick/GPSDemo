@@ -11,4 +11,21 @@ public class GpsCoordinate {
         this.latitude = latitude;
         this.longitude = longitude;
     }
+
+    public double getDistanceTo(GpsCoordinate gpsCoordinate) {
+        double latitudeDistance = latitude - gpsCoordinate.getLatitude();
+        double longitudeDistance = longitude - gpsCoordinate.getLongitude();
+
+        double distance = Math.sqrt(Math.pow(latitudeDistance, 2) + Math.pow(longitudeDistance, 2));
+
+        return distance;
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
 }

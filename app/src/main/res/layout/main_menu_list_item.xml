@@ -9,7 +9,6 @@
         android:id="@+id/mainMenuListItemTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/grayA"
-        android:textColor="@color/black"/>
+        style="@style/menu_item_entry" />
 
 </LinearLayout>
