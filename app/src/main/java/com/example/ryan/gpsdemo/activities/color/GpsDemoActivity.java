@@ -12,7 +12,9 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -24,12 +26,16 @@ import com.example.ryan.gpsdemo.R;
 import com.example.ryan.gpsdemo.activities.menu.MainMenuActivity;
 import com.gps.demo.model.event.EventModel;
 
+import java.util.Date;
+
 import callback.ViewCallBackInterface;
 
 public class GpsDemoActivity extends AppCompatActivity implements LocationListener, OnClickListener,
         ViewCallBackInterface{
     public static final int BUTTON_MENU_TAG = 0;
     public static final String EVENT_MODEL_KEY = "EVENT_MODEL_KEY";
+
+    private static final int FINE_LOCATION_PERMISSION_REQEUST = 8383;
 
     private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 24601;
 
@@ -58,32 +64,19 @@ public class GpsDemoActivity extends AppCompatActivity implements LocationListen
 
         colorBox = (ImageView) findViewById(R.id.color_box);
 
-        Criteria criteria = new Criteria();
-        provider = locationManager.getBestProvider(criteria, false);
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) !=
+                PackageManager.PERMISSION_GRANTED) {
 
-        enabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    FINE_LOCATION_PERMISSION_REQEUST);
 
-        if (!enabled) {
-            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-            startActivity(intent);
+            // should we explain?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+
+            }
+        } else {
+            locationEnabled();
         }
-
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        location = locationManager.getLastKnownLocation(provider);
-
-        if (location != null) {
-            System.out.println("Provider " + provider + " has been selected.");
-        }
-        locationUpdate(location);
 
         Intent intent = getIntent();
 
@@ -93,6 +86,18 @@ public class GpsDemoActivity extends AppCompatActivity implements LocationListen
             String eventKey = intent.getStringExtra(EVENT_MODEL_KEY);
             eventModel = MainMenuActivity.getApplicationModel().getEvent(eventKey);
             eventModel.start(this);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case FINE_LOCATION_PERMISSION_REQEUST:
+                if (grantResults.length > 0 &&
+                        grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    locationEnabled();
+                }
+                break;
         }
     }
 
@@ -113,6 +118,7 @@ public class GpsDemoActivity extends AppCompatActivity implements LocationListen
         double lat = (double) (location.getLatitude());
         double lng = (double) (location.getLongitude());
         locationUpdate(location);
+        System.out.println("+++++++++++++++++++++TIME!!!: " + location.getTime() + " " + ((new Date()).getTime()));
     }
 
     @Override
@@ -215,5 +221,36 @@ public class GpsDemoActivity extends AppCompatActivity implements LocationListen
         Intent intent = new Intent();
         intent.setAction(command.name());
         this.sendBroadcast(intent);
+    }
+
+    private void locationEnabled() {
+
+
+        Criteria criteria = new Criteria();
+        provider = locationManager.getBestProvider(criteria, false);
+
+        enabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+
+        if (!enabled) {
+            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            startActivity(intent);
+        }
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        location = locationManager.getLastKnownLocation(provider);
+
+        if (location != null) {
+            System.out.println("Provider " + provider + " has been selected.");
+        }
+        locationUpdate(location);
     }
 }

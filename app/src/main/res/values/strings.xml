@@ -5,4 +5,6 @@
     <string name="GROUP_POSITION_TAG">GROUP_POSITION_TAG</string>
     <string name="CHILD_POSITION_TAG">CHILD_POSITION_TAG</string>
 
+    <string name="FINE_LOCATION_PERMISSION_REQEUST">FINE_LOCATION_PERMISSION_REQEUST</string>
+
 </resources>
