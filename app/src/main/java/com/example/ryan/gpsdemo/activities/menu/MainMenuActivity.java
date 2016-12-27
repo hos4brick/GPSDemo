@@ -35,6 +35,10 @@ public class MainMenuActivity extends AppCompatActivity {
         EventModel jonHouseEvent = new EventModel(new BufferedReader(new InputStreamReader(getResources().openRawResource(R.raw.jons_house))));
         applicationModel.addEvent(jonHouseEvent);
 
+
+        EventModel ryanHouseEvent = new EventModel(new BufferedReader(new InputStreamReader(getResources().openRawResource(R.raw.ryans_house))));
+        applicationModel.addEvent(ryanHouseEvent);
+
         List<String> menuHeadings = new LinkedList<>();
         HashMap<String, List<String>> menuContentsMap = new HashMap<>();
 

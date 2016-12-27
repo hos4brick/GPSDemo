@@ -46,7 +46,7 @@ public class MainMenuExpandableListAdapter extends BaseExpandableListAdapter imp
 
     @Override
     public Object getChild(int groupPosition, int childPosition) {
-        return menuContentsMap.get(menuHeadings.get(groupPosition));
+        return menuContentsMap.get(menuHeadings.get(groupPosition)).get(childPosition);
     }
 
     @Override
