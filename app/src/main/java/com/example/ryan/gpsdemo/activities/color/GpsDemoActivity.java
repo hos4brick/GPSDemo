@@ -2,16 +2,11 @@ package com.example.ryan.gpsdemo.activities.color;
 
 import android.Manifest;
 import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.location.Criteria;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -20,28 +15,47 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.example.ryan.gpsdemo.R;
 import com.example.ryan.gpsdemo.activities.menu.MainMenuActivity;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.CommonStatusCodes;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.location.SettingsClient;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.gps.demo.model.event.EventModel;
-
-import java.util.Date;
 
 import callback.ViewCallBackInterface;
 
-public class GpsDemoActivity extends AppCompatActivity implements LocationListener, OnClickListener,
-        ViewCallBackInterface{
+import static com.example.ryan.gpsdemo.R.string.FINE_LOCATION_PERMISSION_REQEUST;
+
+public class GpsDemoActivity extends AppCompatActivity implements OnClickListener,
+        ViewCallBackInterface {
     public static final int BUTTON_MENU_TAG = 0;
     public static final String EVENT_MODEL_KEY = "EVENT_MODEL_KEY";
 
-    private static final int FINE_LOCATION_PERMISSION_REQEUST = 8383;
+    private static final int REQUEST_ACCESS_FINE_LOCATION = 8383;
 
-    private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 24601;
+    private static final long LOCATION_REQUEST_INTERVAL = 5000;
+    private static final long LOCATION_REQUEST_FASTEST_INTERVAL = 500;
 
     private BroadcastReceiver broadcastReceiver = null;
 
-    LocationManager locationManager;
+    private FusedLocationProviderClient fusedLocationProviderClient = null;
+    private LocationRequest locationRequest = null;
+    private LocationCallback locationCallback = null;
+
+    private int accessFineLocationPermissions = PackageManager.PERMISSION_DENIED;
+
     boolean enabled;
     Location location;
     String provider;
@@ -60,23 +74,22 @@ public class GpsDemoActivity extends AppCompatActivity implements LocationListen
 
         latitudeField = (TextView) findViewById(R.id.gps_lat_text_view);
         longitudeField = (TextView) findViewById(R.id.gps_long_text_view);
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+
+        locationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                for (Location location : locationResult.getLocations()) {
+                    // Update UI with location data
+                    locationUpdate(location);
+                }
+            }
+        };
 
         colorBox = (ImageView) findViewById(R.id.color_box);
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) !=
-                PackageManager.PERMISSION_GRANTED) {
-
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    FINE_LOCATION_PERMISSION_REQEUST);
-
-            // should we explain?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-
-            }
-        } else {
-            locationEnabled();
-        }
+        requestPermissions();
 
         Intent intent = getIntent();
 
@@ -86,6 +99,19 @@ public class GpsDemoActivity extends AppCompatActivity implements LocationListen
             String eventKey = intent.getStringExtra(EVENT_MODEL_KEY);
             eventModel = MainMenuActivity.getApplicationModel().getEvent(eventKey);
             eventModel.start(this);
+        }
+    }
+
+    public void requestPermissions() {
+        accessFineLocationPermissions = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
+
+        if (PackageManager.PERMISSION_DENIED == accessFineLocationPermissions) {
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    REQUEST_ACCESS_FINE_LOCATION);
+        } else {
+            locationEnabled();
         }
     }
 
@@ -113,29 +139,6 @@ public class GpsDemoActivity extends AppCompatActivity implements LocationListen
         removeLocationUpdates();
     }
 
-    @Override
-    public void onLocationChanged(Location location) {
-        double lat = (double) (location.getLatitude());
-        double lng = (double) (location.getLongitude());
-        locationUpdate(location);
-        System.out.println("+++++++++++++++++++++TIME!!!: " + location.getTime() + " " + ((new Date()).getTime()));
-    }
-
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-        // TODO Auto-generated method sub ... what?
-    }
-
-    @Override
-    public void onProviderEnabled(String provider) {
-        Toast.makeText(this, "Enabled new provider " + provider, Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-        Toast.makeText(this, "Disabled provider " + provider, Toast.LENGTH_SHORT).show();
-    }
-
     private void requestLocationUpdates() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
@@ -147,7 +150,7 @@ public class GpsDemoActivity extends AppCompatActivity implements LocationListen
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
-        locationManager.requestLocationUpdates(provider, 0, 0, this);
+        fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, null);
     }
 
     private void removeLocationUpdates() {
@@ -161,7 +164,7 @@ public class GpsDemoActivity extends AppCompatActivity implements LocationListen
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
-        locationManager.removeUpdates(this);
+        fusedLocationProviderClient.removeLocationUpdates(locationCallback);
     }
 
     @Override
@@ -225,32 +228,78 @@ public class GpsDemoActivity extends AppCompatActivity implements LocationListen
 
     private void locationEnabled() {
 
+        locationRequest = new LocationRequest();
+        locationRequest.setInterval(LOCATION_REQUEST_INTERVAL);
+        locationRequest.setFastestInterval(LOCATION_REQUEST_FASTEST_INTERVAL);
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
-        Criteria criteria = new Criteria();
-        provider = locationManager.getBestProvider(criteria, false);
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
+                .addLocationRequest(locationRequest);
 
-        enabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        SettingsClient settingsClient = LocationServices.getSettingsClient(this);
+        Task<LocationSettingsResponse> locationSettingsResponseTask = settingsClient.checkLocationSettings(builder.build());
 
-        if (!enabled) {
-            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-            startActivity(intent);
-        }
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
+        locationSettingsResponseTask.addOnSuccessListener(this, new OnSuccessListener<LocationSettingsResponse>() {
+            @Override
+            public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
+                getLastLocation();
+            }
+        });
+
+        locationSettingsResponseTask.addOnFailureListener(this, new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                int statusCode = ((ApiException) e).getStatusCode();
+                switch (statusCode) {
+                    case CommonStatusCodes.RESOLUTION_REQUIRED:
+                        // Location settings are not satisfied, but this can be fixed
+                        // by showing the user a dialog.
+//                        try {
+//                            // Show the dialog by calling startResolutionForResult(),
+//                            // and check the result in onActivityResult().
+//                            ResolvableApiException resolvable = (ResolvableApiException) e;
+//                            resolvable.startResolutionForResult(GpsDemoActivity.this,
+//                                    REQUEST_CHECK_SETTINGS);
+//                        } catch (IntentSender.SendIntentException sendEx) {
+//                            // Ignore the error.
+//                        }
+                        break;
+                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                        // Location settings are not satisfied. However, we have no way
+                        // to fix the settings so we won't show the dialog.
+                        break;
+                }
+            }
+        });
+
+
+//        Criteria criteria = new Criteria();
+//        provider = locationManager.getBestProvider(criteria, false);
+//
+//        enabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+//
+//        if (!enabled) {
+//            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+//            startActivity(intent);
+//        }
+    }
+
+    public void getLastLocation() {
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            this.requestPermissions();
             return;
         }
-        location = locationManager.getLastKnownLocation(provider);
 
-        if (location != null) {
-            System.out.println("Provider " + provider + " has been selected.");
-        }
-        locationUpdate(location);
+        fusedLocationProviderClient.getLastLocation().
+                addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        if (location != null) {
+                            locationUpdate(location);
+                        }
+                    }
+                });
     }
 }
