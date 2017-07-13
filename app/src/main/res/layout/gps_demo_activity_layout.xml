@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
 
@@ -9,13 +10,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/colorPrimary"
-        android:layout_weight=".9"/>
+        android:layout_weight="1"/>
 
     <TextView
         android:id="@+id/gps_lat_text_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight=".5"
+        android:layout_weight=".3"
         android:text="LAT: "/>
 
 
@@ -23,6 +24,30 @@
         android:id="@+id/gps_long_text_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight=".5"
+        android:layout_weight=".3"
         android:text="LONG: " />
+
+
+    <TextView
+        android:id="@+id/node_text_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight=".3"
+        android:text="Time: " />
+
+    <Chronometer
+        android:id="@+id/event_time_chronometer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight=".3"
+        android:countDown="false" />
+
+    <TextClock
+        android:id="@+id/gps_text_clock"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight=".3"
+        android:format12Hour="HH:mm:ss.SSS a"
+        android:format24Hour="HH:mm:ss.SSS"
+        tools:targetApi="jelly_bean_mr1"/>
 </LinearLayout>

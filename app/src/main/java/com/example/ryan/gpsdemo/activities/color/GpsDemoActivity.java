@@ -3,17 +3,22 @@ package com.example.ryan.gpsdemo.activities.color;
 import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.Chronometer;
 import android.widget.ImageView;
+import android.widget.TextClock;
 import android.widget.TextView;
 
 import com.example.ryan.gpsdemo.R;
@@ -32,7 +37,9 @@ import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.gps.demo.model.event.node.EventMapTimeColor;
 import com.gps.demo.model.event.EventModel;
+import com.gps.demo.model.event.TimeDetectorThread;
 
 import callback.ViewCallBackInterface;
 
@@ -56,16 +63,19 @@ public class GpsDemoActivity extends AppCompatActivity implements OnClickListene
 
     private int accessFineLocationPermissions = PackageManager.PERMISSION_DENIED;
 
-    boolean enabled;
-    Location location;
-    String provider;
-    double latitude = 0;
-    double longitude = 0;
-    TextView latitudeField;
-    TextView longitudeField;
-    ImageView colorBox;
+    private boolean enabled;
+    private Location location;
+    private String provider;
+    private double latitude = 0;
+    private double longitude = 0;
+    private TextView latitudeField;
+    private TextView longitudeField;
+    private TextView nodeTextView;
+    private ImageView colorBox;
+    private TextClock textClock;
+    private Chronometer eventChronometer;
 
-    EventModel eventModel = null;
+    private EventModel eventModel = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +84,14 @@ public class GpsDemoActivity extends AppCompatActivity implements OnClickListene
 
         latitudeField = (TextView) findViewById(R.id.gps_lat_text_view);
         longitudeField = (TextView) findViewById(R.id.gps_long_text_view);
+        nodeTextView = (TextView) findViewById(R.id.node_text_view);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+//            textClock = (TextClock) findViewById(R.id.gps_text_clock);
+//            textClock.setFormat24Hour("HH:mm:ss.SSS");
+        }
+
+        eventChronometer = (Chronometer) findViewById(R.id.event_time_chronometer);
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
@@ -99,7 +117,12 @@ public class GpsDemoActivity extends AppCompatActivity implements OnClickListene
             String eventKey = intent.getStringExtra(EVENT_MODEL_KEY);
             eventModel = MainMenuActivity.getApplicationModel().getEvent(eventKey);
             eventModel.start(this);
+
+            setEventChronometer();
         }
+
+        TimeDetectorThread tdt = new TimeDetectorThread();
+        tdt.start();
     }
 
     public void requestPermissions() {
@@ -108,9 +131,10 @@ public class GpsDemoActivity extends AppCompatActivity implements OnClickListene
         if (PackageManager.PERMISSION_DENIED == accessFineLocationPermissions) {
             ActivityCompat.requestPermissions(
                     this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    new String[] {Manifest.permission.ACCESS_FINE_LOCATION},
                     REQUEST_ACCESS_FINE_LOCATION);
-        } else {
+        }
+        else {
             locationEnabled();
         }
     }
@@ -131,12 +155,16 @@ public class GpsDemoActivity extends AppCompatActivity implements OnClickListene
     protected void onResume() {
         super.onResume();
         requestLocationUpdates();
+
+        IntentFilter filter = new IntentFilter(CallBackCommand.COLOR_UPDATE.name());
+        this.registerReceiver(broadcastReceiver, filter);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         removeLocationUpdates();
+        this.unregisterReceiver(broadcastReceiver);
     }
 
     private void requestLocationUpdates() {
@@ -191,6 +219,7 @@ public class GpsDemoActivity extends AppCompatActivity implements OnClickListene
         this.location = location;
         locationUpdate();
     }
+
     public void locationUpdate() {
 
         if (location != null) {
@@ -201,11 +230,18 @@ public class GpsDemoActivity extends AppCompatActivity implements OnClickListene
             longitudeField.setText(String.valueOf(longitude));
 
             if (null != eventModel) {
+
                 String hexColor = eventModel.getHexColor(latitude, longitude);
                 updateScreenColor(hexColor);
-            }
+                EventMapTimeColor eventMapTimeColor = eventModel.getEventMapTimeColor();
 
-        } else {
+
+                nodeTextView.setText("Node: " + eventMapTimeColor.getNodeId() +
+                        "\nTime: " + eventMapTimeColor.getTime() + "" +
+                        "\nOffset: " + eventModel.getUtcOffset() + "");
+            }
+        }
+        else {
             latitudeField.setText("Location not available");
             longitudeField.setText("Location not available");
         }
@@ -216,7 +252,11 @@ public class GpsDemoActivity extends AppCompatActivity implements OnClickListene
         colorBox.setBackgroundColor(androidColorCode);
     }
 
-
+    public void setEventChronometer() {
+        long base = SystemClock.elapsedRealtime() - (eventModel.getCurrentTimeIntoEvent(true) * 1000);
+        eventChronometer.setBase(base);
+        eventChronometer.start();
+    }
 
 
     @Override

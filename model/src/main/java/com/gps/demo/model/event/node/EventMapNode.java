@@ -1,4 +1,4 @@
-package com.gps.demo.model.event;
+package com.gps.demo.model.event.node;
 
 import com.gps.demo.model.gps.GpsCoordinate;
 
@@ -9,6 +9,8 @@ import java.util.TreeMap;
  * Created by Jon on 7/11/2016.
  */
 public class EventMapNode {
+    private static int nodeIdRoot = 0;
+    private int nodeId = -1;
     private GpsCoordinate gpsCoordinate = null;
     private TreeMap<Long, EventMapTimeColor> colors = new TreeMap();
 
@@ -18,6 +20,7 @@ public class EventMapNode {
     private EventMapTimeColor nextTimeColor = null;
 
     public EventMapNode(GpsCoordinate gpsCoordinate) {
+        this.nodeId = nodeIdRoot++;
         this.gpsCoordinate = gpsCoordinate;
     }
 
@@ -82,5 +85,9 @@ public class EventMapNode {
         }
 
         return firstEntry.getValue();
+    }
+
+    public int getNodeId() {
+        return nodeId;
     }
 }

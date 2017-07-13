@@ -1,5 +1,7 @@
 package com.gps.demo.model.event;
 
+import com.gps.demo.model.event.node.EventMapTimeColor;
+
 import callback.ViewCallBackInterface;
 import callback.ViewCallBackInterface.CallBackCommand;
 
@@ -31,7 +33,7 @@ public class EventThread extends Thread {
             this.callBackInterface.update(CallBackCommand.COLOR_UPDATE);
 
             if (emtc.getNextTimeColor() != null) {
-                long delay = emtc.getTime() * 1000;
+                long delay = 100;// emtc.timeDisplayed() * 1000;
 
                 try {
                     synchronized (waiter) {

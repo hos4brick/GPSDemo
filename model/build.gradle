@@ -7,4 +7,5 @@ dependencies {
     //noinspection GroovyUnusedAssignment
     targetCompatibility = 1.7
     compile project(':wirthlessutilities')
+    compile 'commons-net:commons-net:3.6'
 }

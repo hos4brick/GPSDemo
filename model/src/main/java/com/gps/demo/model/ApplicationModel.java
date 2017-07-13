@@ -1,6 +1,7 @@
 package com.gps.demo.model;
 
 import com.gps.demo.model.event.EventModel;
+import com.gps.demo.model.event.TimeDetectorThread;
 import com.wirthless.utilities.OrderedHashTable;
 
 import java.io.File;
@@ -13,9 +14,15 @@ public class ApplicationModel {
     private File fileDirectory = null;
     private OrderedHashTable<String, EventModel> events = new OrderedHashTable<>();
 
+    private TimeDetectorThread timeDetectorThread = null;
+
 
     public ApplicationModel(File fileDirectory) {
         System.out.println("========== CONSTRUCTOR: " + fileDirectory);
+
+        timeDetectorThread = new TimeDetectorThread();
+        timeDetectorThread.start();
+
         this.fileDirectory = fileDirectory;
 
         refreshEventFiles();

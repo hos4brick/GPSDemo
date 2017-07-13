@@ -1,6 +1,7 @@
 package com.gps.demo.model.event;
 
 import com.gps.demo.model.gps.GpsCoordinate;
+import com.gps.demo.model.event.node.EventMapTimeColor;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -23,6 +24,8 @@ public class EventModel {
 
     private EventThread eventThread = null;
 
+    private TimeDetectorThread timeDetectorThread = null;
+
     private String eventName = "";
     private Date eventDate = null;
     private EventMap eventMap = null;
@@ -40,6 +43,10 @@ public class EventModel {
     public EventModel(BufferedReader eventModelBufferedReader) {
 
         try {
+
+            timeDetectorThread = new TimeDetectorThread();
+            timeDetectorThread.start();
+
             String eventMetaDataLine = eventModelBufferedReader.readLine();
             if (null == eventMetaDataLine) {
                 throw new NullPointerException("Missing eventMetaDataLine");
@@ -125,19 +132,28 @@ public class EventModel {
         return this.getHexColor();
     }
 
-    private long getCurrentTimeIntoEvent() {
+
+    public long getCurrentTimeIntoEvent() {
+        return this.getCurrentTimeIntoEvent(false);
+    }
+
+    public long getCurrentTimeIntoEvent(boolean raw) {
         long startTime = eventDate.getTime();
         long currentTime = (new Date()).getTime();
 
+        currentTime += timeDetectorThread.getUtcOffset();
+
         long timeIntoEvent = (currentTime - startTime) / 1000;
 
-        if (loop) {
+        if (loop && !raw) {
             timeIntoEvent %= eventLength;
         }
 
         // if the event hasn't started yet return 0, otherwise return the time into the event
         return timeIntoEvent > 0 ? timeIntoEvent : 0;
     }
+
+
 
     public EventMapTimeColor getEventMapTimeColor() {
         long currentTimeIntoEvent = getCurrentTimeIntoEvent();
@@ -164,5 +180,12 @@ public class EventModel {
         eventThread.start();
 
         // TODO need some logic here to wait for the real start time
+    }
+
+    public long getUtcOffset() {
+        if (null != timeDetectorThread) {
+            return timeDetectorThread.getUtcOffset();
+        }
+        return 0;
     }
 }

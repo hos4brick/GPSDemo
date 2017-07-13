@@ -1,6 +1,8 @@
 package com.gps.demo.model.event;
 
 import com.gps.demo.model.gps.GpsCoordinate;
+import com.gps.demo.model.event.node.EventMapNode;
+import com.gps.demo.model.event.node.EventMapTimeColor;
 
 import java.util.LinkedList;
 
@@ -23,7 +25,8 @@ public class EventMap {
     }
 
     public void addTimeColor(int index, long time, String color) {
-        EventMapTimeColor timeColor = new EventMapTimeColor(time, color);
+        EventMapNode mapNode = eventMapNodes.get(index);
+        EventMapTimeColor timeColor = new EventMapTimeColor(mapNode.getNodeId(), time, color);
 
         eventMapNodes.get(index).addTimeColor(timeColor);
     }
